@@ -14,9 +14,11 @@ export default function ReunionPage() {
 	const [maritalStatus, setMaritalStatus] = useState<"single" | "couple">(
 		"single",
 	);
-	const [hasKids, setHasKids] = useState<"yes" | "no">("no"); // 👈 New state
+	const [hasKids, setHasKids] = useState<"yes" | "no">("no");
 	const [kidsUnder4, setKidsUnder4] = useState(0);
 	const [kidsOver4, setKidsOver4] = useState(0);
+	const [tShirtSize, setTShirtSize] = useState(""); // 👕 New state
+	const [comment, setComment] = useState(""); // 💬 New state
 
 	// Auto-calculate totals
 	const adultsCount = maritalStatus === "couple" ? 2 : 1;
@@ -32,6 +34,8 @@ export default function ReunionPage() {
 		formData.set("kidsUnder4", hasKids === "yes" ? kidsUnder4.toString() : "0");
 		formData.set("kidsOver4", hasKids === "yes" ? kidsOver4.toString() : "0");
 		formData.set("totalAttendees", totalAttendees.toString());
+		formData.set("tShirtSize", tShirtSize); // 👕 Add T-shirt size
+		formData.set("comment", comment); // 💬 Add comment
 
 		const result = await saveRegistration(formData);
 
@@ -53,8 +57,10 @@ export default function ReunionPage() {
 		}
 	};
 
-	const contactNumber = "+8801440286937";
 	const deadline = "১৫ মে, ২০২৬";
+
+	// T-shirt size options
+	const tShirtSizes = ["S", "M", "L", "XL", "XXL", "XXXL"];
 
 	return (
 		<div className='min-h-screen bg-gradient-to-b from-blue-50 to-white'>
@@ -81,9 +87,7 @@ export default function ReunionPage() {
 						<h3 className='text-3xl font-bold text-yellow-400 mb-2'>
 							রেজিস্ট্রেশন ফর্ম
 						</h3>
-						<p className='text-blue-200 text-sm'>
-							📅 শেষ তারিখ: {deadline} | 📞 {contactNumber}
-						</p>
+						<p className='text-blue-200 text-sm'>📅 শেষ তারিখ: {deadline}</p>
 					</div>
 
 					{/* Form Body */}
@@ -165,6 +169,36 @@ export default function ReunionPage() {
 											placeholder='যেমন: ঢাকা, চট্টগ্রাম'
 											className='w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:outline-none transition'
 										/>
+									</div>
+								</div>
+
+								{/* 👕 T-Shirt Size Selector */}
+								<div className='bg-purple-50 p-4 rounded-xl border-2 border-purple-200'>
+									<label className='block text-gray-800 font-bold mb-3'>
+										<span className='mr-2'>👕</span>টি-শার্ট সাইজ{" "}
+										<span className='text-red-500'>*</span>
+									</label>
+									<div className='grid grid-cols-3 sm:grid-cols-6 gap-2'>
+										{tShirtSizes.map((size) => (
+											<label
+												key={size}
+												className={`flex items-center justify-center cursor-pointer px-3 py-2 rounded-lg border-2 transition font-semibold ${
+													tShirtSize === size
+														? "bg-purple-600 text-white border-purple-600"
+														: "bg-white text-gray-700 border-purple-200 hover:border-purple-400"
+												}`}
+											>
+												<input
+													type='radio'
+													name='tShirtSize'
+													value={size}
+													checked={tShirtSize === size}
+													onChange={(e) => setTShirtSize(e.target.value)}
+													className='sr-only'
+												/>
+												{size}
+											</label>
+										))}
 									</div>
 								</div>
 
@@ -297,6 +331,25 @@ export default function ReunionPage() {
 									</div>
 								)}
 
+								{/* 💬 Comment Field */}
+								<div>
+									<label className='block text-gray-700 font-semibold mb-2'>
+										<span className='mr-2'>💬</span>কোনো মন্তব্য বা বিশেষ অনুরোধ{" "}
+										<span className='text-gray-400'>(ঐচ্ছিক)</span>
+									</label>
+									<textarea
+										name='comment'
+										rows={4}
+										placeholder='যেমন: খাবারের এলার্জি, বিশেষ কোনো প্রয়োজন ইত্যাদি...'
+										value={comment}
+										onChange={(e) => setComment(e.target.value)}
+										className='w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:outline-none transition resize-none'
+									/>
+									<p className='text-xs text-gray-400 mt-1 text-right'>
+										সর্বোচ্চ ৫০০ শব্দ
+									</p>
+								</div>
+
 								{/* Live Total Preview (Always Visible) */}
 								<div className='bg-blue-50 rounded-xl p-4 border-2 border-blue-200'>
 									<p className='text-center text-gray-700'>
@@ -329,6 +382,8 @@ export default function ReunionPage() {
 									name='kidsOver4'
 									value={hasKids === "yes" ? kidsOver4 : 0}
 								/>
+								<input type='hidden' name='tShirtSize' value={tShirtSize} />
+								<input type='hidden' name='comment' value={comment} />
 								<input
 									type='hidden'
 									name='totalAttendees'
@@ -351,7 +406,7 @@ export default function ReunionPage() {
 									)}
 								</button>
 
-								{/* 📞 Emergency Contacts - Updated Section */}
+								{/* 📞 Emergency Contacts */}
 								<div className='mt-6 pt-4 border-t border-gray-200'>
 									<p className='text-center text-gray-700 font-semibold mb-3'>
 										📞 জরুরি যোগাযোগ (২৪/৭)
@@ -432,7 +487,7 @@ export default function ReunionPage() {
 				</div>
 			</section>
 
-			{/* 📅 Event Details (Same as before) */}
+			{/* 📅 Event Details */}
 			<section className='max-w-4xl mx-auto px-4 pb-12'>
 				<div className='bg-white rounded-2xl shadow-xl p-6 md:p-8 border-2 border-blue-200'>
 					<h3 className='text-2xl font-bold text-center text-blue-900 mb-6'>

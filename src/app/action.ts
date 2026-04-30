@@ -10,7 +10,7 @@ let client: MongoClient;
 let clientPromise: Promise<MongoClient>;
 
 if (process.env.NODE_ENV === "development") {
-	const globalWithMongo = global as typeof globalThis & {
+	let globalWithMongo = global as typeof globalThis & {
 		_mongoClientPromise?: Promise<MongoClient>;
 	};
 	if (!globalWithMongo._mongoClientPromise) {
@@ -35,6 +35,8 @@ export async function saveRegistration(formData: FormData) {
 		const maritalStatus = formData.get("maritalStatus")?.toString() as
 			| "single"
 			| "couple";
+		const tShirtSize = formData.get("tShirtSize")?.toString().trim();
+		const comment = formData.get("comment")?.toString().trim() || null;
 		const hasKids = formData.get("hasKids")?.toString() === "yes";
 
 		const kidsUnder4 = hasKids
@@ -49,20 +51,20 @@ export async function saveRegistration(formData: FormData) {
 		);
 
 		// Validation
-		if (!name || !phone || !maritalStatus) {
+		if (!name || !phone || !maritalStatus || !tShirtSize) {
 			return {
 				success: false,
-				error: "নাম, ফোন এবং বৈবাহিক অবস্থা অবশ্যই দিতে হবে",
+				error: "নাম, ফোন, বৈবাহিক অবস্থা এবং টি-শার্ট সাইজ অবশ্যই দিতে হবে",
 			};
 		}
 
 		// Deadline check
 		const today = new Date();
-		const deadline = new Date("2026-05-30T23:59:59");
+		const deadline = new Date("2026-05-15T23:59:59");
 		if (today > deadline) {
 			return {
 				success: false,
-				error: "রেজিস্ট্রেশন শেষ তারিখ ৩০ মে অতিক্রম হয়েছে",
+				error: "রেজিস্ট্রেশন শেষ তারিখ ১৫ মে অতিক্রম হয়েছে",
 			};
 		}
 
@@ -72,6 +74,8 @@ export async function saveRegistration(formData: FormData) {
 			email,
 			currentCity,
 			maritalStatus,
+			tShirtSize,
+			comment,
 			hasKids,
 			kids: hasKids
 				? {
