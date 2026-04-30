@@ -23,8 +23,8 @@ export default function RootLayout({
 	children: React.ReactNode;
 }>) {
 	return (
-		<html lang='en'>
-			<head>এসএসসি ২০১৪ ব্যাচ</head>
+		<html lang=''>
+			<title>এসএসসি ২০১৪ ব্যাচ</title>
 			<body
 				className={`${geistSans.variable} ${geistMono.variable} antialiased`}
 			>
