@@ -1,103 +1,262 @@
+"use client";
+
+import { useState } from "react";
+import { saveReunionRegistration } from "./actions";
 import Image from "next/image";
 
-export default function Home() {
-  return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm/6 text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-[family-name:var(--font-geist-mono)] font-semibold">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+export default function ReunionPage() {
+	const [status, setStatus] = useState<
+		"idle" | "loading" | "success" | "error"
+	>("idle");
+	const [message, setMessage] = useState("");
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
-        </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
-    </div>
-  );
+	async function handleSubmit(formData: FormData) {
+		setStatus("loading");
+		const result = await saveReunionRegistration(formData);
+
+		if (result.success) {
+			setStatus("success");
+			setMessage("আপনার রেজিস্ট্রেশন সফলভাবে সম্পন্ন হয়েছে!");
+		} else {
+			setStatus("error");
+			setMessage(result.error || "অজানা ত্রুটি হয়েছে");
+		}
+	}
+
+	return (
+		<div className='min-h-screen bg-gradient-to-b from-blue-50 to-white'>
+			{/* 🎨 Hero Banner Section */}
+			<section className='relative w-full'>
+				<div className='relative w-full h-auto'>
+					<Image
+						src='/reunion-banner.jpg'
+						alt='প্রথম পুনর্মিলন ২০২৬ - এসএসসি ব্যাচ ২০১৪'
+						width={1200}
+						height={600}
+						className='w-full h-auto object-cover'
+						priority
+					/>
+					{/* Overlay for better text readability if needed */}
+					<div className='absolute inset-0 bg-gradient-to-b from-black/10 to-transparent pointer-events-none'></div>
+				</div>
+			</section>
+
+			{/* 📝 Registration Form Section */}
+			<section className='relative z-10 max-w-2xl mx-auto px-4 py-12 -mt-8'>
+				<div className='bg-white rounded-2xl shadow-2xl overflow-hidden border-4 border-yellow-400'>
+					{/* Form Header */}
+					<div className='bg-gradient-to-r from-blue-700 to-blue-900 p-6 text-center'>
+						<h3 className='text-3xl font-bold text-yellow-400 mb-2'>
+							রেজিস্ট্রেশন ফর্ম
+						</h3>
+						<p className='text-blue-200'>
+							নিচের ফর্মটি পূরণ করে পুনর্মিলনে অংশগ্রহণ করুন
+						</p>
+					</div>
+
+					{/* Form Body */}
+					<form action={handleSubmit} className='p-6 md:p-8 space-y-5'>
+						{status === "success" ? (
+							<div className='text-center py-12'>
+								<div className='text-6xl mb-4'>🎉</div>
+								<h4 className='text-2xl font-bold text-green-600 mb-2'>
+									অভিনন্দন!
+								</h4>
+								<p className='text-gray-600 text-lg'>{message}</p>
+								<p className='text-sm text-gray-500 mt-4'>
+									আমরা শীঘ্রই আপনার সাথে যোগাযোগ করব
+								</p>
+								<button
+									type='button'
+									onClick={() => window.location.reload()}
+									className='mt-6 px-8 py-3 bg-blue-600 text-white rounded-full hover:bg-blue-700 transition font-semibold'
+								>
+									আরেকটি রেজিস্ট্রেশন
+								</button>
+							</div>
+						) : (
+							<>
+								{status === "error" && (
+									<div className='bg-red-50 border border-red-200 text-red-700 p-4 rounded-xl text-center'>
+										❌ {message}
+									</div>
+								)}
+
+								<div className='grid grid-cols-1 md:grid-cols-2 gap-5'>
+									{/* Name */}
+									<div>
+										<label className='block text-gray-700 font-semibold mb-2'>
+											<span className='mr-2'>👤</span>আপনার নাম{" "}
+											<span className='text-red-500'>*</span>
+										</label>
+										<input
+											name='name'
+											required
+											placeholder='পুরো নাম লিখুন'
+											className='w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:outline-none transition'
+										/>
+									</div>
+
+									{/* Phone */}
+									<div>
+										<label className='block text-gray-700 font-semibold mb-2'>
+											<span className='mr-2'>📱</span>মোবাইল নম্বর{" "}
+											<span className='text-red-500'>*</span>
+										</label>
+										<input
+											name='phone'
+											required
+											type='tel'
+											pattern='[0-9]{11}'
+											placeholder='01XXXXXXXXX'
+											className='w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:outline-none transition'
+										/>
+									</div>
+								</div>
+
+								<div className='grid grid-cols-1 md:grid-cols-2 gap-5'>
+									{/* Email */}
+									<div>
+										<label className='block text-gray-700 font-semibold mb-2'>
+											<span className='mr-2'>📧</span>ইমেইল{" "}
+											<span className='text-gray-400'>(ঐচ্ছিক)</span>
+										</label>
+										<input
+											name='email'
+											type='email'
+											placeholder='example@mail.com'
+											className='w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:outline-none transition'
+										/>
+									</div>
+
+									{/* Current City */}
+									<div>
+										<label className='block text-gray-700 font-semibold mb-2'>
+											<span className='mr-2'>🏙️</span>বর্তমান শহর{" "}
+											<span className='text-gray-400'>(ঐচ্ছিক)</span>
+										</label>
+										<input
+											name='currentCity'
+											placeholder='যেমন: ঢাকা, চট্টগ্রাম'
+											className='w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:outline-none transition'
+										/>
+									</div>
+								</div>
+
+								{/* Attendees Count - IMPORTANT FIELD */}
+								<div className='bg-gradient-to-r from-yellow-50 to-orange-50 p-5 rounded-xl border-2 border-yellow-400'>
+									<label className='block text-gray-800 font-bold text-lg mb-3'>
+										<span className='mr-2'>👥</span>কতজন আসতে চান?{" "}
+										<span className='text-red-500'>*</span>
+									</label>
+									<div className='flex items-center gap-4'>
+										<input
+											name='attendees'
+											required
+											type='number'
+											min='1'
+											max='15'
+											defaultValue='1'
+											className='w-32 px-4 py-3 border-2 border-yellow-400 rounded-xl text-center text-xl font-bold focus:border-yellow-600 focus:outline-none transition'
+										/>
+										<p className='text-sm text-gray-600'>
+											পরিবারের সদস্যসহ মোট সংখ্যা লিখুন (সর্বোচ্চ ১৫ জন)
+										</p>
+									</div>
+								</div>
+
+								{/* Submit Button */}
+								<button
+									type='submit'
+									disabled={status === "loading"}
+									className='w-full bg-gradient-to-r from-blue-700 to-blue-900 text-white py-4 rounded-xl text-xl font-bold hover:from-blue-800 hover:to-blue-950 active:scale-[0.98] transition-all disabled:opacity-60 disabled:cursor-not-allowed shadow-lg'
+								>
+									{status === "loading" ? (
+										<span className='flex items-center justify-center gap-2'>
+											<span className='animate-spin'>⏳</span>
+											রেজিস্ট্রেশন হচ্ছে...
+										</span>
+									) : (
+										"✅ রেজিস্ট্রেশন করুন"
+									)}
+								</button>
+
+								<p className='text-center text-gray-500 text-sm'>
+									📞 জরুরি যোগাযোগ: এসএসসি ২০১৪ ব্যাচ পরিবার
+								</p>
+							</>
+						)}
+					</form>
+				</div>
+			</section>
+
+			{/* 📅 Event Details Section */}
+			<section className='max-w-4xl mx-auto px-4 pb-12'>
+				<div className='bg-white rounded-2xl shadow-xl p-6 md:p-8 border-2 border-blue-200'>
+					<h3 className='text-2xl font-bold text-center text-blue-900 mb-6'>
+						📅 অনুষ্ঠানের বিস্তারিত
+					</h3>
+
+					<div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
+						{/* Date & Day */}
+						<div className='bg-blue-50 rounded-xl p-4 border-l-4 border-blue-600'>
+							<div className='flex items-center gap-3 mb-2'>
+								<span className='text-2xl'>📅</span>
+								<div>
+									<p className='text-gray-500 text-sm'>তারিখ</p>
+									<p className='text-xl font-bold text-blue-900'>৩০ মে, ২০২৬</p>
+								</div>
+							</div>
+							<div className='flex items-center gap-3'>
+								<span className='text-2xl'>🗓️</span>
+								<div>
+									<p className='text-gray-500 text-sm'>রোজ</p>
+									<p className='text-xl font-bold text-blue-900'>শনিবার</p>
+								</div>
+							</div>
+						</div>
+
+						{/* Time & Venue */}
+						<div className='bg-yellow-50 rounded-xl p-4 border-l-4 border-yellow-500'>
+							<div className='flex items-center gap-3 mb-2'>
+								<span className='text-2xl'>⏰</span>
+								<div>
+									<p className='text-gray-500 text-sm'>সময়</p>
+									<p className='text-xl font-bold text-yellow-800'>
+										সকাল ১০টা থেকে
+									</p>
+								</div>
+							</div>
+							<div className='flex items-center gap-3'>
+								<span className='text-2xl'>📍</span>
+								<div>
+									<p className='text-gray-500 text-sm'>স্থান</p>
+									<p className='text-xl font-bold text-yellow-800'>
+										বিদ্যালয় প্রাঙ্গণ
+									</p>
+								</div>
+							</div>
+						</div>
+					</div>
+
+					{/* Quote */}
+					<div className='mt-6 text-center'>
+						<p className='text-lg italic text-gray-600 bg-gray-50 p-4 rounded-lg'>
+							"স্মৃতির আঙিনায় ফিরি মোরা, বন্ধুত্বের টানে বারে বারে..."
+						</p>
+					</div>
+				</div>
+			</section>
+
+			{/* Footer */}
+			<footer className='bg-gradient-to-r from-blue-900 to-blue-700 text-white text-center py-6 px-4'>
+				<p className='text-yellow-400 font-semibold text-lg'>
+					আয়োজনে: এসএসসি ২০১৪ ব্যাচ পরিবার
+				</p>
+				<p className='text-blue-200 text-sm mt-2'>
+					© ২০২৬ এম.কে.ডি.আর. গণ উচ্চ বিদ্যালয় পুনর্মিলনী
+				</p>
+			</footer>
+		</div>
+	);
 }
