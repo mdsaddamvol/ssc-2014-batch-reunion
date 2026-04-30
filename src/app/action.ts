@@ -22,6 +22,181 @@ if (process.env.NODE_ENV === "development") {
 	client = new MongoClient(uri);
 	clientPromise = client.connect();
 }
+// 🔹 Fetch all registrations with optional search
+export async function getRegistrations(searchQuery?: string) {
+	try {
+		const client = await clientPromise;
+		const db = client.db("reunion_db");
+
+		const query = searchQuery
+			? {
+					$or: [
+						{ name: { $regex: searchQuery, $options: "i" } },
+						{ phone: { $regex: searchQuery, $options: "i" } },
+						{ email: { $regex: searchQuery, $options: "i" } },
+					],
+				}
+			: {};
+
+		const registrations = await db
+			.collection("registrations")
+			.find(query)
+			.sort({ registeredAt: -1 })
+			.toArray();
+
+		// Convert ObjectId to string for serialization
+		return JSON.parse(JSON.stringify(registrations));
+	} catch (error) {
+		console.error("❌ Fetch Error:", error);
+		return [];
+	}
+}
+
+// 🔹 Toggle confirmation status
+export async function toggleConfirmation(id: string, newStatus: boolean) {
+	try {
+		const client = await clientPromise;
+		const db = client.db("reunion_db");
+
+		await db.collection("registrations").updateOne(
+			{ _id: new ObjectId(id) },
+			{
+				$set: {
+					isConfirmed: newStatus,
+					updatedAt: new Date(),
+				},
+			},
+		);
+
+		return { success: true };
+	} catch (error) {
+		console.error("❌ Toggle Error:", error);
+		return { success: false, error: "আপডেট ব্যর্থ হয়েছে" };
+	}
+}
+
+// 🔹 Get insights/analytics
+export async function getInsights() {
+	try {
+		const client = await clientPromise;
+		const db = client.db("reunion_db");
+		const collection = db.collection("registrations");
+
+		// Total counts
+		const totalRegistrations = await collection.countDocuments();
+		const confirmedCount = await collection.countDocuments({
+			isConfirmed: true,
+		});
+		const pendingCount = totalRegistrations - confirmedCount;
+
+		// Marital status breakdown
+		const maritalStats = await collection
+			.aggregate([{ $group: { _id: "$maritalStatus", count: { $sum: 1 } } }])
+			.toArray();
+
+		// T-shirt size distribution
+		const tShirtStats = await collection
+			.aggregate([{ $group: { _id: "$tShirtSize", count: { $sum: 1 } } }])
+			.toArray();
+
+		// Kids stats
+		const withKids = await collection.countDocuments({ hasKids: true });
+		const kidsUnder4Total = await collection
+			.aggregate([
+				{ $match: { hasKids: true } },
+				{ $group: { _id: null, total: { $sum: "$kids.under4" } } },
+			])
+			.toArray();
+		const kidsOver4Total = await collection
+			.aggregate([
+				{ $match: { hasKids: true } },
+				{ $group: { _id: null, total: { $sum: "$kids.over4" } } },
+			])
+			.toArray();
+
+		// Total attendees
+		const totalAttendees = await collection
+			.aggregate([
+				{ $group: { _id: null, total: { $sum: "$totalAttendees" } } },
+			])
+			.toArray();
+
+		return {
+			totalRegistrations,
+			confirmedCount,
+			pendingCount,
+			maritalStats: maritalStats as { _id: string; count: number }[],
+			tShirtStats: tShirtStats as { _id: string; count: number }[],
+			kids: {
+				withKids,
+				under4Total: kidsUnder4Total[0]?.total || 0,
+				over4Total: kidsOver4Total[0]?.total || 0,
+			},
+			totalAttendees: totalAttendees[0]?.total || 0,
+		};
+	} catch (error) {
+		console.error("❌ Insights Error:", error);
+		return null;
+	}
+}
+
+// 🔹 Export to CSV
+export async function exportToCSV() {
+	try {
+		const client = await clientPromise;
+		const db = client.db("reunion_db");
+
+		const registrations = await db
+			.collection("registrations")
+			.find({})
+			.sort({ registeredAt: -1 })
+			.toArray();
+
+		const headers = [
+			"Name",
+			"Phone",
+			"Email",
+			"City",
+			"Marital Status",
+			"T-Shirt Size",
+			"Has Kids",
+			"Kids Under 4",
+			"Kids Over 4",
+			"Total Attendees",
+			"Confirmed",
+			"Registered At",
+			"Comment",
+		];
+
+		const rows = registrations.map((r: any) => [
+			r.name,
+			r.phone,
+			r.email || "",
+			r.currentCity || "",
+			r.maritalStatus,
+			r.tShirtSize,
+			r.hasKids ? "Yes" : "No",
+			r.kids?.under4 || 0,
+			r.kids?.over4 || 0,
+			r.totalAttendees,
+			r.isConfirmed ? "Yes" : "No",
+			new Date(r.registeredAt).toLocaleString("bn-BD"),
+			r.comment || "",
+		]);
+
+		const csvContent = [
+			headers.join(","),
+			...rows.map((row) =>
+				row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(","),
+			),
+		].join("\n");
+
+		return csvContent;
+	} catch (error) {
+		console.error("❌ CSV Export Error:", error);
+		return null;
+	}
+}
 
 export async function saveRegistration(formData: FormData) {
 	try {
