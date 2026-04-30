@@ -1,11 +1,57 @@
 "use server";
 
-import { MongoClient } from "mongodb";
+import { MongoClient, ObjectId } from "mongodb";
 
 const uri = process.env.MONGODB_URI;
 if (!uri) throw new Error("MONGODB_URI environment variable is missing");
 
-// Singleton pattern
+// 🔹 Type Definitions
+export type Registration = {
+	_id: string;
+	name: string;
+	phone: string;
+	email: string | null;
+	currentCity: string | null;
+	maritalStatus: "single" | "couple";
+	tShirtSize: "S" | "M" | "L" | "XL" | "XXL" | "XXXL";
+	comment: string | null;
+	hasKids: boolean;
+	kids: {
+		under4: number;
+		over4: number;
+		total: number;
+	} | null;
+	totalAttendees: number;
+	isConfirmed: boolean;
+	registeredAt: string | Date;
+	updatedAt?: string | Date;
+};
+
+export type Insights = {
+	totalRegistrations: number;
+	confirmedCount: number;
+	pendingCount: number;
+	maritalStats: { _id: string; count: number }[];
+	tShirtStats: { _id: string; count: number }[];
+	kids: {
+		withKids: number;
+		under4Total: number;
+		over4Total: number;
+	};
+	totalAttendees: number;
+};
+
+export type SaveRegistrationResult = {
+	success: boolean;
+	error?: string;
+};
+
+export type ToggleResult = {
+	success: boolean;
+	error?: string;
+};
+
+// 🔹 Singleton MongoDB Connection
 let client: MongoClient;
 let clientPromise: Promise<MongoClient>;
 
@@ -22,8 +68,11 @@ if (process.env.NODE_ENV === "development") {
 	client = new MongoClient(uri);
 	clientPromise = client.connect();
 }
+
 // 🔹 Fetch all registrations with optional search
-export async function getRegistrations(searchQuery?: string) {
+export async function getRegistrations(
+	searchQuery?: string,
+): Promise<Registration[]> {
 	try {
 		const client = await clientPromise;
 		const db = client.db("reunion_db");
@@ -44,8 +93,19 @@ export async function getRegistrations(searchQuery?: string) {
 			.sort({ registeredAt: -1 })
 			.toArray();
 
-		// Convert ObjectId to string for serialization
-		return JSON.parse(JSON.stringify(registrations));
+		// Convert ObjectId to string & Date to ISO string for serialization
+		return registrations.map((reg) => ({
+			...reg,
+			_id: reg._id.toString(),
+			registeredAt:
+				reg.registeredAt instanceof Date
+					? reg.registeredAt.toISOString()
+					: reg.registeredAt,
+			updatedAt:
+				reg.updatedAt instanceof Date
+					? reg.updatedAt.toISOString()
+					: reg.updatedAt,
+		})) as Registration[];
 	} catch (error) {
 		console.error("❌ Fetch Error:", error);
 		return [];
@@ -53,7 +113,10 @@ export async function getRegistrations(searchQuery?: string) {
 }
 
 // 🔹 Toggle confirmation status
-export async function toggleConfirmation(id: string, newStatus: boolean) {
+export async function toggleConfirmation(
+	id: string,
+	newStatus: boolean,
+): Promise<ToggleResult> {
 	try {
 		const client = await clientPromise;
 		const db = client.db("reunion_db");
@@ -76,7 +139,7 @@ export async function toggleConfirmation(id: string, newStatus: boolean) {
 }
 
 // 🔹 Get insights/analytics
-export async function getInsights() {
+export async function getInsights(): Promise<Insights | null> {
 	try {
 		const client = await clientPromise;
 		const db = client.db("reunion_db");
@@ -91,48 +154,66 @@ export async function getInsights() {
 
 		// Marital status breakdown
 		const maritalStats = await collection
-			.aggregate([{ $group: { _id: "$maritalStatus", count: { $sum: 1 } } }])
+			.aggregate<{
+				_id: string;
+				count: number;
+			}>([{ $group: { _id: "$maritalStatus", count: { $sum: 1 } } }])
 			.toArray();
 
 		// T-shirt size distribution
 		const tShirtStats = await collection
-			.aggregate([{ $group: { _id: "$tShirtSize", count: { $sum: 1 } } }])
+			.aggregate<{
+				_id: string;
+				count: number;
+			}>([{ $group: { _id: "$tShirtSize", count: { $sum: 1 } } }])
 			.toArray();
 
 		// Kids stats
 		const withKids = await collection.countDocuments({ hasKids: true });
-		const kidsUnder4Total = await collection
-			.aggregate([
+
+		const kidsUnder4Agg = await collection
+			.aggregate<{
+				total: number;
+			}>([
 				{ $match: { hasKids: true } },
 				{ $group: { _id: null, total: { $sum: "$kids.under4" } } },
 			])
 			.toArray();
-		const kidsOver4Total = await collection
-			.aggregate([
+
+		const kidsOver4Agg = await collection
+			.aggregate<{
+				total: number;
+			}>([
 				{ $match: { hasKids: true } },
 				{ $group: { _id: null, total: { $sum: "$kids.over4" } } },
 			])
 			.toArray();
 
 		// Total attendees
-		const totalAttendees = await collection
-			.aggregate([
-				{ $group: { _id: null, total: { $sum: "$totalAttendees" } } },
-			])
+		const totalAttendeesAgg = await collection
+			.aggregate<{
+				total: number;
+			}>([{ $group: { _id: null, total: { $sum: "$totalAttendees" } } }])
 			.toArray();
 
 		return {
 			totalRegistrations,
 			confirmedCount,
 			pendingCount,
-			maritalStats: maritalStats as { _id: string; count: number }[],
-			tShirtStats: tShirtStats as { _id: string; count: number }[],
+			maritalStats: maritalStats.map((s) => ({
+				_id: s._id || "unknown",
+				count: s.count,
+			})),
+			tShirtStats: tShirtStats.map((s) => ({
+				_id: s._id || "unknown",
+				count: s.count,
+			})),
 			kids: {
 				withKids,
-				under4Total: kidsUnder4Total[0]?.total || 0,
-				over4Total: kidsOver4Total[0]?.total || 0,
+				under4Total: kidsUnder4Agg[0]?.total || 0,
+				over4Total: kidsOver4Agg[0]?.total || 0,
 			},
-			totalAttendees: totalAttendees[0]?.total || 0,
+			totalAttendees: totalAttendeesAgg[0]?.total || 0,
 		};
 	} catch (error) {
 		console.error("❌ Insights Error:", error);
@@ -140,8 +221,8 @@ export async function getInsights() {
 	}
 }
 
-// 🔹 Export to CSV
-export async function exportToCSV() {
+// 🔹 Export to CSV (Type-safe version)
+export async function exportToCSV(): Promise<string | null> {
 	try {
 		const client = await clientPromise;
 		const db = client.db("reunion_db");
@@ -168,26 +249,52 @@ export async function exportToCSV() {
 			"Comment",
 		];
 
-		const rows = registrations.map((r: any) => [
-			r.name,
-			r.phone,
-			r.email || "",
-			r.currentCity || "",
-			r.maritalStatus,
-			r.tShirtSize,
-			r.hasKids ? "Yes" : "No",
-			r.kids?.under4 || 0,
-			r.kids?.over4 || 0,
-			r.totalAttendees,
-			r.isConfirmed ? "Yes" : "No",
-			new Date(r.registeredAt).toLocaleString("bn-BD"),
-			r.comment || "",
-		]);
+		// ✅ Type-safe mapping with proper null checks
+		const rows = registrations.map(
+			(doc: {
+				_id: ObjectId;
+				name?: string;
+				phone?: string;
+				email?: string | null;
+				currentCity?: string | null;
+				maritalStatus?: "single" | "couple";
+				tShirtSize?: string;
+				hasKids?: boolean;
+				kids?: { under4?: number; over4?: number } | null;
+				totalAttendees?: number;
+				isConfirmed?: boolean;
+				registeredAt?: Date | string;
+				comment?: string | null;
+			}) => {
+				const safeDate =
+					doc.registeredAt instanceof Date
+						? doc.registeredAt
+						: new Date(doc.registeredAt || Date.now());
+
+				return [
+					doc.name || "",
+					doc.phone || "",
+					doc.email || "",
+					doc.currentCity || "",
+					doc.maritalStatus || "",
+					doc.tShirtSize || "",
+					doc.hasKids ? "Yes" : "No",
+					doc.kids?.under4 ?? 0,
+					doc.kids?.over4 ?? 0,
+					doc.totalAttendees ?? 0,
+					doc.isConfirmed ? "Yes" : "No",
+					safeDate.toLocaleString("bn-BD"),
+					doc.comment || "",
+				] as const;
+			},
+		);
 
 		const csvContent = [
 			headers.join(","),
 			...rows.map((row) =>
-				row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(","),
+				Array.from(row)
+					.map((cell) => `"${String(cell).replace(/"/g, '""')}"`)
+					.join(","),
 			),
 		].join("\n");
 
@@ -198,7 +305,10 @@ export async function exportToCSV() {
 	}
 }
 
-export async function saveRegistration(formData: FormData) {
+// 🔹 Save new registration
+export async function saveRegistration(
+	formData: FormData,
+): Promise<SaveRegistrationResult> {
 	try {
 		const client = await clientPromise;
 		const db = client.db("reunion_db");
@@ -210,7 +320,10 @@ export async function saveRegistration(formData: FormData) {
 		const maritalStatus = formData.get("maritalStatus")?.toString() as
 			| "single"
 			| "couple";
-		const tShirtSize = formData.get("tShirtSize")?.toString().trim();
+		const tShirtSize = formData
+			.get("tShirtSize")
+			?.toString()
+			.trim() as Registration["tShirtSize"];
 		const comment = formData.get("comment")?.toString().trim() || null;
 		const hasKids = formData.get("hasKids")?.toString() === "yes";
 
@@ -243,6 +356,7 @@ export async function saveRegistration(formData: FormData) {
 			};
 		}
 
+		// Insert to DB
 		await db.collection("registrations").insertOne({
 			name,
 			phone,
@@ -260,6 +374,7 @@ export async function saveRegistration(formData: FormData) {
 					}
 				: null,
 			totalAttendees,
+			isConfirmed: false, // Default status
 			registeredAt: new Date(),
 		});
 

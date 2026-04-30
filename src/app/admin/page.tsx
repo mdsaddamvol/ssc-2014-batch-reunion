@@ -38,7 +38,7 @@ export default function AdminPage() {
 	const [registrations, setRegistrations] = useState<Registration[]>([]);
 	const [insights, setInsights] = useState<Insights | null>(null);
 	const [loading, setLoading] = useState(true);
-	const [searchQuery, setSearchQuery] = useState("");
+	const [searchQuery, setSearchQuery] = useState<string>("");
 	const [filterStatus, setFilterStatus] = useState<
 		"all" | "confirmed" | "pending"
 	>("all");
@@ -90,7 +90,17 @@ export default function AdminPage() {
 	};
 
 	// Stats Card Component
-	const StatCard = ({ title, value, icon, color }: any) => (
+	const StatCard = ({
+		title,
+		value,
+		icon,
+		color,
+	}: {
+		title: string;
+		value: number;
+		icon: string;
+		color: string;
+	}) => (
 		<div className={`bg-white rounded-xl p-4 shadow-md border-l-4 ${color}`}>
 			<div className='flex items-center justify-between'>
 				<div>
@@ -147,7 +157,9 @@ export default function AdminPage() {
 					<select
 						value={filterStatus}
 						onChange={(e) => {
-							setFilterStatus(e.target.value as any);
+							setFilterStatus(
+								e.target.value as "all" | "confirmed" | "pending",
+							);
 							loadData();
 						}}
 						className='px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none'
