@@ -10,8 +10,29 @@ export default function ReunionPage() {
 	>("idle");
 	const [message, setMessage] = useState("");
 
+	// State management
+	const [maritalStatus, setMaritalStatus] = useState<"single" | "couple">(
+		"single",
+	);
+	const [hasKids, setHasKids] = useState<"yes" | "no">("no"); // 👈 New state
+	const [kidsUnder4, setKidsUnder4] = useState(0);
+	const [kidsOver4, setKidsOver4] = useState(0);
+
+	// Auto-calculate totals
+	const adultsCount = maritalStatus === "couple" ? 2 : 1;
+	const kidsTotal = hasKids === "yes" ? kidsUnder4 + kidsOver4 : 0;
+	const totalAttendees = adultsCount + kidsTotal;
+
 	async function handleSubmit(formData: FormData) {
 		setStatus("loading");
+
+		// Append all dynamic values
+		formData.set("maritalStatus", maritalStatus);
+		formData.set("hasKids", hasKids);
+		formData.set("kidsUnder4", hasKids === "yes" ? kidsUnder4.toString() : "0");
+		formData.set("kidsOver4", hasKids === "yes" ? kidsOver4.toString() : "0");
+		formData.set("totalAttendees", totalAttendees.toString());
+
 		const result = await saveRegistration(formData);
 
 		if (result.success) {
@@ -23,9 +44,21 @@ export default function ReunionPage() {
 		}
 	}
 
+	// Reset kids count when "No" is selected
+	const handleHasKidsChange = (value: "yes" | "no") => {
+		setHasKids(value);
+		if (value === "no") {
+			setKidsUnder4(0);
+			setKidsOver4(0);
+		}
+	};
+
+	const contactNumber = "+8801440286937";
+	const deadline = "১৫ মে, ২০২৬";
+
 	return (
 		<div className='min-h-screen bg-gradient-to-b from-blue-50 to-white'>
-			{/* 🎨 Hero Banner Section */}
+			{/* 🎨 Hero Banner */}
 			<section className='relative w-full'>
 				<div className='relative w-full h-auto'>
 					<Image
@@ -36,12 +69,11 @@ export default function ReunionPage() {
 						className='w-full h-auto object-cover'
 						priority
 					/>
-					{/* Overlay for better text readability if needed */}
 					<div className='absolute inset-0 bg-gradient-to-b from-black/10 to-transparent pointer-events-none'></div>
 				</div>
 			</section>
 
-			{/* 📝 Registration Form Section */}
+			{/* 📝 Registration Form */}
 			<section className='relative z-10 max-w-2xl mx-auto px-4 py-12 -mt-8'>
 				<div className='bg-white rounded-2xl shadow-2xl overflow-hidden border-4 border-yellow-400'>
 					{/* Form Header */}
@@ -49,8 +81,8 @@ export default function ReunionPage() {
 						<h3 className='text-3xl font-bold text-yellow-400 mb-2'>
 							রেজিস্ট্রেশন ফর্ম
 						</h3>
-						<p className='text-blue-200'>
-							নিচের ফর্মটি পূরণ করে পুনর্মিলনে অংশগ্রহণ করুন
+						<p className='text-blue-200 text-sm'>
+							📅 শেষ তারিখ: {deadline} | 📞 {contactNumber}
 						</p>
 					</div>
 
@@ -63,9 +95,6 @@ export default function ReunionPage() {
 									অভিনন্দন!
 								</h4>
 								<p className='text-gray-600 text-lg'>{message}</p>
-								<p className='text-sm text-gray-500 mt-4'>
-									আমরা শীঘ্রই আপনার সাথে যোগাযোগ করব
-								</p>
 								<button
 									type='button'
 									onClick={() => window.location.reload()}
@@ -82,8 +111,8 @@ export default function ReunionPage() {
 									</div>
 								)}
 
+								{/* Name & Phone */}
 								<div className='grid grid-cols-1 md:grid-cols-2 gap-5'>
-									{/* Name */}
 									<div>
 										<label className='block text-gray-700 font-semibold mb-2'>
 											<span className='mr-2'>👤</span>আপনার নাম{" "}
@@ -96,8 +125,6 @@ export default function ReunionPage() {
 											className='w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:outline-none transition'
 										/>
 									</div>
-
-									{/* Phone */}
 									<div>
 										<label className='block text-gray-700 font-semibold mb-2'>
 											<span className='mr-2'>📱</span>মোবাইল নম্বর{" "}
@@ -114,8 +141,8 @@ export default function ReunionPage() {
 									</div>
 								</div>
 
+								{/* Email & City */}
 								<div className='grid grid-cols-1 md:grid-cols-2 gap-5'>
-									{/* Email */}
 									<div>
 										<label className='block text-gray-700 font-semibold mb-2'>
 											<span className='mr-2'>📧</span>ইমেইল{" "}
@@ -128,8 +155,6 @@ export default function ReunionPage() {
 											className='w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:outline-none transition'
 										/>
 									</div>
-
-									{/* Current City */}
 									<div>
 										<label className='block text-gray-700 font-semibold mb-2'>
 											<span className='mr-2'>🏙️</span>বর্তমান ঠিকানা{" "}
@@ -143,27 +168,172 @@ export default function ReunionPage() {
 									</div>
 								</div>
 
-								{/* Attendees Count - IMPORTANT FIELD */}
-								<div className='bg-gradient-to-r from-yellow-50 to-orange-50 p-5 rounded-xl border-2 border-yellow-400'>
-									<label className='block text-gray-800 font-bold text-lg mb-3'>
-										<span className='mr-2'>👥</span>কতজন আসতে চান?{" "}
-										<span className='text-red-500'>*</span>
-									</label>
-									<div className='flex items-center gap-4'>
-										<input
-											name='attendees'
-											required
-											type='number'
-											min='1'
-											max='15'
-											defaultValue='1'
-											className='w-32 px-4 py-3 border-2 border-yellow-400 rounded-xl text-center text-xl font-bold focus:border-yellow-600 focus:outline-none transition'
-										/>
-										<p className='text-sm text-gray-600'>
-											পরিবারের সদস্যসহ মোট সংখ্যা লিখুন (সর্বোচ্চ ১৫ জন)
-										</p>
+								{/* 👫 Marital Status */}
+								<div className='bg-blue-50 p-4 rounded-xl border-2 border-blue-200'>
+									<div className='flex flex-wrap gap-4'>
+										<label className='flex items-center cursor-pointer bg-white px-4 py-2 rounded-lg border-2 border-blue-200 hover:border-blue-400 transition'>
+											<input
+												type='radio'
+												name='maritalStatus'
+												value='single'
+												checked={maritalStatus === "single"}
+												onChange={(e) =>
+													setMaritalStatus(
+														e.target.value as "single" | "couple",
+													)
+												}
+												className='h-4 w-4 text-blue-600 focus:ring-blue-500'
+											/>
+											<span className='ml-2 text-gray-700 font-medium'>
+												একক (Single)
+											</span>
+										</label>
+										<label className='flex items-center cursor-pointer bg-white px-4 py-2 rounded-lg border-2 border-blue-200 hover:border-blue-400 transition'>
+											<input
+												type='radio'
+												name='maritalStatus'
+												value='couple'
+												checked={maritalStatus === "couple"}
+												onChange={(e) =>
+													setMaritalStatus(
+														e.target.value as "single" | "couple",
+													)
+												}
+												className='h-4 w-4 text-blue-600 focus:ring-blue-500'
+											/>
+											<span className='ml-2 text-gray-700 font-medium'>
+												দম্পতি (Couple) 👫
+											</span>
+										</label>
 									</div>
 								</div>
+
+								{/* 👶 Has Kids? (Conditional Trigger) */}
+								<div className='bg-yellow-50 p-4 rounded-xl border-2 border-yellow-300'>
+									<label className='block text-gray-800 font-bold mb-3'>
+										<span className='mr-2'>👨‍👩‍👧‍👦</span>আপনি কি সন্তান আনবেন?
+									</label>
+									<div className='flex flex-wrap gap-4'>
+										<label className='flex items-center cursor-pointer bg-white px-4 py-2 rounded-lg border-2 border-yellow-200 hover:border-yellow-400 transition'>
+											<input
+												type='radio'
+												name='hasKids'
+												value='no'
+												checked={hasKids === "no"}
+												onChange={() => handleHasKidsChange("no")}
+												className='h-4 w-4 text-yellow-600 focus:ring-yellow-500'
+											/>
+											<span className='ml-2 text-gray-700 font-medium'>
+												না ❌
+											</span>
+										</label>
+										<label className='flex items-center cursor-pointer bg-white px-4 py-2 rounded-lg border-2 border-yellow-200 hover:border-yellow-400 transition'>
+											<input
+												type='radio'
+												name='hasKids'
+												value='yes'
+												checked={hasKids === "yes"}
+												onChange={() => handleHasKidsChange("yes")}
+												className='h-4 w-4 text-yellow-600 focus:ring-yellow-500'
+											/>
+											<span className='ml-2 text-gray-700 font-medium'>
+												হ্যাঁ ✅
+											</span>
+										</label>
+									</div>
+								</div>
+
+								{/* 👶 Kids Age Split - CONDITIONAL RENDER */}
+								{hasKids === "yes" && (
+									<div className='bg-gradient-to-r from-yellow-50 to-orange-50 p-5 rounded-xl border-2 border-yellow-400 animate-in fade-in slide-in-from-top-2 duration-300'>
+										<label className='block text-gray-800 font-bold text-lg mb-3'>
+											<span className='mr-2'>🎂</span>সন্তানদের বয়স বিভাজন
+										</label>
+
+										<div className='grid grid-cols-2 gap-4 mb-3'>
+											<div>
+												<label className='block text-sm text-gray-600 mb-1'>
+													৪ বছরের কম 👶
+												</label>
+												<input
+													type='number'
+													min='0'
+													value={kidsUnder4}
+													onChange={(e) =>
+														setKidsUnder4(
+															Math.max(0, parseInt(e.target.value) || 0),
+														)
+													}
+													className='w-full px-3 py-2 border-2 border-yellow-300 rounded-lg text-center font-bold focus:border-yellow-500 focus:outline-none'
+												/>
+											</div>
+											<div>
+												<label className='block text-sm text-gray-600 mb-1'>
+													৪ বছরের বেশি 🧒
+												</label>
+												<input
+													type='number'
+													min='0'
+													value={kidsOver4}
+													onChange={(e) =>
+														setKidsOver4(
+															Math.max(0, parseInt(e.target.value) || 0),
+														)
+													}
+													className='w-full px-3 py-2 border-2 border-yellow-300 rounded-lg text-center font-bold focus:border-yellow-500 focus:outline-none'
+												/>
+											</div>
+										</div>
+
+										<div className='bg-white/60 rounded-lg p-3 text-center border border-yellow-200'>
+											<p className='text-sm text-gray-700'>
+												<strong>মোট সন্তান:</strong>{" "}
+												<span className='text-xl font-bold text-orange-600'>
+													{kidsUnder4 + kidsOver4}
+												</span>{" "}
+												জন
+											</p>
+										</div>
+									</div>
+								)}
+
+								{/* Live Total Preview (Always Visible) */}
+								<div className='bg-blue-50 rounded-xl p-4 border-2 border-blue-200'>
+									<p className='text-center text-gray-700'>
+										<strong>👥 মোট অংশগ্রহণকারী:</strong>{" "}
+										<span className='text-2xl font-bold text-blue-700'>
+											{totalAttendees}
+										</span>{" "}
+										জন
+									</p>
+									<p className='text-xs text-center text-gray-500 mt-1'>
+										({adultsCount} প্রাপ্তবয়স্ক{" "}
+										{hasKids === "yes" ? `+ ${kidsTotal} সন্তান` : ""})
+									</p>
+								</div>
+
+								{/* Hidden fields for server */}
+								<input
+									type='hidden'
+									name='maritalStatus'
+									value={maritalStatus}
+								/>
+								<input type='hidden' name='hasKids' value={hasKids} />
+								<input
+									type='hidden'
+									name='kidsUnder4'
+									value={hasKids === "yes" ? kidsUnder4 : 0}
+								/>
+								<input
+									type='hidden'
+									name='kidsOver4'
+									value={hasKids === "yes" ? kidsOver4 : 0}
+								/>
+								<input
+									type='hidden'
+									name='totalAttendees'
+									value={totalAttendees}
+								/>
 
 								{/* Submit Button */}
 								<button
@@ -173,32 +343,102 @@ export default function ReunionPage() {
 								>
 									{status === "loading" ? (
 										<span className='flex items-center justify-center gap-2'>
-											<span className='animate-spin'>⏳</span>
-											রেজিস্ট্রেশন হচ্ছে...
+											<span className='animate-spin'>⏳</span>রেজিস্ট্রেশন
+											হচ্ছে...
 										</span>
 									) : (
 										"✅ রেজিস্ট্রেশন করুন"
 									)}
 								</button>
 
-								<p className='text-center text-gray-500 text-sm'>
-									📞 জরুরি যোগাযোগ: এসএসসি ২০১৪ ব্যাচ পরিবার
-								</p>
+								{/* 📞 Emergency Contacts - Updated Section */}
+								<div className='mt-6 pt-4 border-t border-gray-200'>
+									<p className='text-center text-gray-700 font-semibold mb-3'>
+										📞 জরুরি যোগাযোগ (২৪/৭)
+									</p>
+									<div className='grid grid-cols-2 gap-3'>
+										<a
+											href='tel:01755274696'
+											className='flex items-center justify-center gap-2 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-xl px-3 py-2 transition group'
+										>
+											<span className='text-blue-600 group-hover:scale-110 transition'>
+												📱
+											</span>
+											<div className='text-left'>
+												<p className='text-sm font-semibold text-gray-800'>
+													কামরুল
+												</p>
+												<p className='text-xs text-blue-600 font-mono'>
+													01755274696
+												</p>
+											</div>
+										</a>
+										<a
+											href='tel:+8801726855178'
+											className='flex items-center justify-center gap-2 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-xl px-3 py-2 transition group'
+										>
+											<span className='text-blue-600 group-hover:scale-110 transition'>
+												📱
+											</span>
+											<div className='text-left'>
+												<p className='text-sm font-semibold text-gray-800'>
+													শামীম
+												</p>
+												<p className='text-xs text-blue-600 font-mono'>
+													01726855178
+												</p>
+											</div>
+										</a>
+										<a
+											href='tel:+8801919434326'
+											className='flex items-center justify-center gap-2 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-xl px-3 py-2 transition group'
+										>
+											<span className='text-blue-600 group-hover:scale-110 transition'>
+												📱
+											</span>
+											<div className='text-left'>
+												<p className='text-sm font-semibold text-gray-800'>
+													আলিফ
+												</p>
+												<p className='text-xs text-blue-600 font-mono'>
+													01919434326
+												</p>
+											</div>
+										</a>
+										<a
+											href='tel:+8801679344452'
+											className='flex items-center justify-center gap-2 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-xl px-3 py-2 transition group'
+										>
+											<span className='text-blue-600 group-hover:scale-110 transition'>
+												📱
+											</span>
+											<div className='text-left'>
+												<p className='text-sm font-semibold text-gray-800'>
+													রবিন
+												</p>
+												<p className='text-xs text-blue-600 font-mono'>
+													01679344452
+												</p>
+											</div>
+										</a>
+									</div>
+									<p className='text-center text-gray-400 text-xs mt-3'>
+										যেকোনো প্রয়োজনে সরাসরি কল করুন
+									</p>
+								</div>
 							</>
 						)}
 					</form>
 				</div>
 			</section>
 
-			{/* 📅 Event Details Section */}
+			{/* 📅 Event Details (Same as before) */}
 			<section className='max-w-4xl mx-auto px-4 pb-12'>
 				<div className='bg-white rounded-2xl shadow-xl p-6 md:p-8 border-2 border-blue-200'>
 					<h3 className='text-2xl font-bold text-center text-blue-900 mb-6'>
 						📅 অনুষ্ঠানের বিস্তারিত
 					</h3>
-
 					<div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
-						{/* Date & Day */}
 						<div className='bg-blue-50 rounded-xl p-4 border-l-4 border-blue-600'>
 							<div className='flex items-center gap-3 mb-2'>
 								<span className='text-2xl'>📅</span>
@@ -215,8 +455,6 @@ export default function ReunionPage() {
 								</div>
 							</div>
 						</div>
-
-						{/* Time & Venue */}
 						<div className='bg-yellow-50 rounded-xl p-4 border-l-4 border-yellow-500'>
 							<div className='flex items-center gap-3 mb-2'>
 								<span className='text-2xl'>⏰</span>
@@ -238,8 +476,6 @@ export default function ReunionPage() {
 							</div>
 						</div>
 					</div>
-
-					{/* Quote */}
 					<div className='mt-6 text-center'>
 						<p className='text-lg italic text-gray-600 bg-gray-50 p-4 rounded-lg'>
 							&quot;স্মৃতির আঙিনায় ফিরি মোরা, বন্ধুত্বের টানে বারে
