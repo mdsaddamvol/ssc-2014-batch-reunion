@@ -292,7 +292,21 @@ export default function AdminPage() {
 												<div className='text-xs text-gray-500'>{reg.email}</div>
 											)}
 										</td>
-										<td className='p-4 font-mono text-gray-700'>{reg.phone}</td>
+
+										{/* ✅ Callable Phone Number */}
+										<td className='p-4'>
+											<a
+												href={`tel:${reg.phone}`}
+												className='inline-flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 hover:bg-blue-100 text-gray-700 hover:text-blue-700 rounded-lg font-mono text-sm transition group'
+												title='কল করুন'
+											>
+												<span className='text-gray-400 group-hover:text-blue-600 transition'>
+													📞
+												</span>
+												<span>{reg.phone}</span>
+											</a>
+										</td>
+
 										<td className='p-4'>
 											<span className='px-2 py-1 bg-purple-100 text-purple-800 rounded text-xs font-semibold'>
 												{reg.tShirtSize}
