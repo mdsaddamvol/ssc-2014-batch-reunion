@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { saveReunionRegistration } from "./actions";
+import { saveRegistration } from "./action";
 import Image from "next/image";
 
 export default function ReunionPage() {
@@ -12,7 +12,7 @@ export default function ReunionPage() {
 
 	async function handleSubmit(formData: FormData) {
 		setStatus("loading");
-		const result = await saveReunionRegistration(formData);
+		const result = await saveRegistration(formData);
 
 		if (result.success) {
 			setStatus("success");
