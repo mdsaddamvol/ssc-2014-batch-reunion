@@ -242,7 +242,8 @@ export default function ReunionPage() {
 					{/* Quote */}
 					<div className='mt-6 text-center'>
 						<p className='text-lg italic text-gray-600 bg-gray-50 p-4 rounded-lg'>
-							"স্মৃতির আঙিনায় ফিরি মোরা, বন্ধুত্বের টানে বারে বারে..."
+							&quot;স্মৃতির আঙিনায় ফিরি মোরা, বন্ধুত্বের টানে বারে
+							বারে...&quot;
 						</p>
 					</div>
 				</div>
