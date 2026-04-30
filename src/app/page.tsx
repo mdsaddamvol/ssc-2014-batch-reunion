@@ -132,7 +132,7 @@ export default function ReunionPage() {
 									{/* Current City */}
 									<div>
 										<label className='block text-gray-700 font-semibold mb-2'>
-											<span className='mr-2'>🏙️</span>বর্তমান শহর{" "}
+											<span className='mr-2'>🏙️</span>বর্তমান ঠিকানা{" "}
 											<span className='text-gray-400'>(ঐচ্ছিক)</span>
 										</label>
 										<input
