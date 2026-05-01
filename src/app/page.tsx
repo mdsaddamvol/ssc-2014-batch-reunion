@@ -9,7 +9,7 @@ export default function ReunionPage() {
 		"idle" | "loading" | "success" | "error"
 	>("idle");
 	const [message, setMessage] = useState("");
-
+    const [fname, setFname] = useState("");
 	// State management
 	const [maritalStatus, setMaritalStatus] = useState<"single" | "couple">(
 		"single",
@@ -27,7 +27,7 @@ export default function ReunionPage() {
 
 	async function handleSubmit(formData: FormData) {
 		setStatus("loading");
-
+		setFname(formData.get("name"))
 		// Append all dynamic values
 		formData.set("maritalStatus", maritalStatus);
 		formData.set("hasKids", hasKids);
@@ -105,6 +105,8 @@ export default function ReunionPage() {
 								<h4 className='text-2xl font-bold text-green-600 mb-2'>
 									অভিনন্দন!
 								</h4>
+							
+								<p className='text-gray-600 text-lg'>{fname}</p>
 								<p className='text-gray-600 text-lg'>{message}</p>
 							</div>
 						) : (
