@@ -44,7 +44,14 @@ export default function ReunionPage() {
 			setMessage("আপনার রেজিস্ট্রেশন সফলভাবে সম্পন্ন হয়েছে!");
 		} else {
 			setStatus("error");
-			setMessage(result.error || "অজানা ত্রুটি হয়েছে");
+			// ✅ ডুপ্লিকেট এরর হাইলাইট
+			if (result.error?.includes("ইতিমধ্যে রেজিস্ট্রেশন")) {
+				setMessage(
+					`⚠️ ${result.error}\n\nঅনুগ্রহ করে ভিন্ন নম্বর বা ইমেইল ব্যবহার করুন।`,
+				);
+			} else {
+				setMessage(result.error || "অজানা ত্রুটি হয়েছে");
+			}
 		}
 	}
 
@@ -99,13 +106,6 @@ export default function ReunionPage() {
 									অভিনন্দন!
 								</h4>
 								<p className='text-gray-600 text-lg'>{message}</p>
-								<button
-									type='button'
-									onClick={() => window.location.reload()}
-									className='mt-6 px-8 py-3 bg-blue-600 text-white rounded-full hover:bg-blue-700 transition font-semibold'
-								>
-									আরেকটি রেজিস্ট্রেশন
-								</button>
 							</div>
 						) : (
 							<>

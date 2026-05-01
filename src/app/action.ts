@@ -305,7 +305,7 @@ export async function exportToCSV(): Promise<string | null> {
 	}
 }
 
-// 🔹 Save new registration
+// 🔹 Save new registration (With duplicate prevention)
 export async function saveRegistration(
 	formData: FormData,
 ): Promise<SaveRegistrationResult> {
@@ -338,7 +338,7 @@ export async function saveRegistration(
 			10,
 		);
 
-		// Validation
+		// 🔹 Basic Validation
 		if (!name || !phone || !maritalStatus || !tShirtSize) {
 			return {
 				success: false,
@@ -346,7 +346,24 @@ export async function saveRegistration(
 			};
 		}
 
-		// Deadline check
+		// 🔹 Phone format validation (Bangladesh)
+		const phoneRegex = /^01[3-9]\d{8}$/;
+		if (!phoneRegex.test(phone)) {
+			return {
+				success: false,
+				error: "সঠিক মোবাইল নম্বর দিন (যেমন: 01712345678)",
+			};
+		}
+
+		// 🔹 Email format validation (if provided)
+		if (email) {
+			const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+			if (!emailRegex.test(email)) {
+				return { success: false, error: "সঠিক ইমেইল এড্রেস দিন" };
+			}
+		}
+
+		// 🔹 Deadline check
 		const today = new Date();
 		const deadline = new Date("2026-05-15T23:59:59");
 		if (today > deadline) {
@@ -356,7 +373,35 @@ export async function saveRegistration(
 			};
 		}
 
-		// Insert to DB
+		// 🔹 ✅ DUPLICATE CHECK: Phone or Email already exists?
+		const existing = await db.collection("registrations").findOne({
+			$or: [
+				{ phone: phone },
+				...(email ? [{ email: email }] : []), // Only check email if provided
+			],
+		});
+
+		if (existing) {
+			// Determine which field caused the duplicate
+			if (existing.phone === phone) {
+				return {
+					success: false,
+					error: "এই ফোন নম্বর দিয়ে ইতিমধ্যে রেজিস্ট্রেশন করা হয়েছে",
+				};
+			}
+			if (email && existing.email === email) {
+				return {
+					success: false,
+					error: "এই ইমেইল দিয়ে ইতিমধ্যে রেজিস্ট্রেশন করা হয়েছে",
+				};
+			}
+			return {
+				success: false,
+				error: "এই তথ্য দিয়ে ইতিমধ্যে রেজিস্ট্রেশন করা হয়েছে",
+			};
+		}
+
+		// 🔹 Insert to DB
 		await db.collection("registrations").insertOne({
 			name,
 			phone,
