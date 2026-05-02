@@ -552,7 +552,7 @@ export default function ReunionPage() {
 					© ২০২৬ এম.কে.ডি.আর. গণ উচ্চ বিদ্যালয় পুনর্মিলনী
 				</p>
 				<p className='text-blue-200 text-sm mt-2'>
-					Developed By Md Saddam Hosen
+					*This App is Developed By Md Saddam Hosen*
 				</p>
 			</footer>
 		</div>
