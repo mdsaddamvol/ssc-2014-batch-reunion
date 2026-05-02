@@ -27,7 +27,7 @@ export default function ReunionPage() {
 
 	async function handleSubmit(formData: FormData) {
 		setStatus("loading");
-		setFname(formData.get("name")||"")
+		setFname(formData.get("name") || "")
 		// Append all dynamic values
 		formData.set("maritalStatus", maritalStatus);
 		formData.set("hasKids", hasKids);
