@@ -24,7 +24,7 @@ export default function RootLayout({
 }>) {
 	return (
 		<html lang=''>
-			<title>এখানে রেজিষ্ট্রেশন ফর্ম দেখুন</title>
+			<title>এখানে রেজিষ্ট্রেশন ফর্ম পুরন করুন</title>
 			<body
 				className={`${geistSans.variable} ${geistMono.variable} antialiased`}
 			>
